@@ -14,51 +14,44 @@ var database = firebase.database();
 $("#submit").on("click", function () {
     var trainName = $('#trainName').val().trim();
     var Destination = $('#destination').val().trim();
-    var trainTime = $('#trainTime').val().trim();
-    var trainFrequency = $('#frequency').val().trim();
-    var nextArrival
-    var minAway
+    var firstArrival = $('#trainTime').val().trim();
+    var tFrequency = $('#frequency').val().trim();
+
 
     database.ref().push({
-        trainName: trainName,
-        Destination: Destination,
-        trainTime: trainTime,
-        trainFrequency: trainFrequency,
-        nextArrival: nextArrival,
-        minAway: minAway
+        DatatrainName: trainName,
+        Datadestination: Destination,
+        DatafirstArrival: firstArrival,
+        DatatFrequency: tFrequency,
+        Timestamp: firebase.database.ServerValue.TIMESTAMP,
     })
 
+    clear();
+})
+
+database.ref().on("child_added", function (snapshot) {
+    var snapName = snapshot.val().DatatrainName;
+    var snapDest = snapshot.val().Datadestination;
+    var snapFreq = snapshot.val().DatatFrequency;
+    var snapArrival = snapshot.val().DatafirstArrival;
+
+    //  Convert Time and configure for Future use by pushing firstArrival back 1 year
+    var firstArrivalConverted = moment(snapArrival, "hh:mm A").subtract(1, "years");
+    //  Calculate now vs First Arrival
+    var diff = moment().diff(moment(firstArrivalConverted), "minutes");
+    var left = diff % snapFreq;
+    //  How long till train
+    var timeLeft = snapFreq - left;
+    var newArrival = moment().add(timeLeft, "m").format("hh:mm A");
+
+    $(".table").append("<tr><td>" + snapName + "</td><td>" + snapDest + "</td><td>" + snapFreq + "</td><td>" +
+        newArrival + "</td><td>" + timeLeft + "</td></tr>");
+
+})
+
+function clear() {
     $('#trainName').val("");
     $('#destination').val("");
     $('#trainTime').val("");
     $('#frequency').val("");
-
-})
-console.log(trainName);
-
-database.ref().on("child_added", function (snapshot) {
-    var newTrain = snapshot.val();
-    var newTR = $("<tr>");
-    var newtrainName = $("<td>");
-    var newDestination = $("<td>");
-    var newtrainTime = $("<td>");
-    var newtrainFrequency = $("<td>");
-    var newnextArrival = $("<td>");
-    var newminAway = $("<td>");
-
-    newtrainName.text(newTrain.trainName);
-    newDestination.text(newTrain.Destination);
-    newtrainTime.text(newTrain.trainTime);
-    newtrainFrequency.text(newTrain.trainFrequency);
-    newnextArrival.text(newTrain.nextArrival);
-    newminAway.text(newTrain.minAway);
-
-
-    $(newTR).append(newtrainName);
-    $(newTR).append(newDestination);
-    $(newTR).append(newtrainTime);
-    $(newTR).append(newtrainFrequency);
-    $(newTR).append(newnextArrival);
-    $(newTR).append(newminAway);
-    $("table").append(newTR);
-})
+}
